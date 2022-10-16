@@ -1,4 +1,7 @@
 
+let winners_counted = 10
+(** amount of top performers to select for the next generation *)
+
 type share_action =
   | Share_fake_planet
   | Share_legit_planet
@@ -226,7 +229,8 @@ let rec solve_game : int -> environment -> int -> int -> environment =
 
         play_game ~rounds environment scores;
 
-        let environment : environment = sort_winners 3 scores environment in
+        let environment : environment =
+          sort_winners winners_counted scores environment in
 
         let environments = ref [] in
 
