@@ -209,15 +209,15 @@ let play_game ?(rounds = 10) environment scores =
     end
   done
 
-let sort_winners number environment scores =
-  let results = Array.mapi begin fun i score ->
-      Array.get environment i, score
-    end
-      scores in
+let sort_winners number scores environment =
+  let results = Array.mapi (fun i score -> score, i) scores in
 
-  Array.sort (fun (x, _) (y, _) -> Int.compare y x ) results;
+  Array.sort (fun (x, _) (y, _) -> Int.compare y x) results;
 
-  Array.sub results 0 number |> Array.map (fun (_, y) -> y)
+  Array.init number begin fun i ->
+    let _, pos = Array.get results i in
+    Array.get environment pos
+  end
 
 let rec solve_game : int -> environment -> int -> int -> environment =
   fun
@@ -228,6 +228,15 @@ let rec solve_game : int -> environment -> int -> int -> environment =
         let scores = Array.(init (length environment) (fun _ -> 0)) in
 
         play_game ~rounds environment scores;
+
+        Printf.printf "--- iteration %d ---\n" iterations;
+
+        environment |> Array.iter begin fun program ->
+          print_program Format.std_formatter program;
+          print_newline ()
+        end;
+
+        Printf.printf "\n---\n\n";
 
         let environment : environment =
           sort_winners winners_counted scores environment in
@@ -256,9 +265,5 @@ let () =
 
   let environment = environment_create ~players ~rounds () in
 
-  let environment = solve_game passes environment players rounds in
-
-  environment |> Array.iter begin fun program ->
-    print_program Format.std_formatter program;
-    print_newline ()
-  end
+  solve_game passes environment players rounds
+  |> ignore
