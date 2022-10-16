@@ -134,17 +134,34 @@ let program_responder_conditional_create ?(rounds = 10) () =
     rounds
     (fun _ -> program_conditional_create ~rounds respond_action_create )
 
-let program_conditional_create ?(rounds = 10) () =
+let program_create ?(rounds = 10) () =
   program_sender_conditional_create ~rounds (),
   program_responder_conditional_create ~rounds ()
 
+let program_breed_side left =
+  Array.mapi begin fun round item ->
+    match Random.int 2 with
+    | 0 -> item
+    | 1 -> Array.get left round
+    | _ -> assert false
+  end
+
 type environment = program array
+
+let program_breed : int -> program -> program -> environment =
+  fun
+    iterations
+    (left_sender_programs, left_responder_programs)
+    (right_sender_programs, right_responder_programs)
+    ->
+      Array.init iterations begin fun _ ->
+        program_breed_side left_sender_programs right_sender_programs,
+        program_breed_side left_responder_programs right_responder_programs
+      end
 
 let environment_create ?(players = 10) ?(rounds = 10) : unit -> environment =
   fun () ->
-  Array.init players (fun _ -> program_conditional_create ~rounds ())
-
-type scores = int array
+  Array.init players (fun _ -> program_create ~rounds ())
 
 let array_wraparound_get arr current_pos selected_pos =
   let length = Array.length arr - 1 in
@@ -159,10 +176,7 @@ let solve_responder_conditional sender_programs current_round = function
     if solve_branch branch sender_program then on_true else on_false
   | { conditional = None ; on_true ; _ } -> on_true
 
-let play_game ?(players = 100) ?(rounds = 10) () =
-  let environment = environment_create ~players ~rounds () in
-  let scores : scores = Array.init players (fun _ -> 0) in
-
+let play_game ?(rounds = 10) environment scores =
   let iteri_environment f = Array.iteri f environment in
 
   for round = 0 to rounds - 1 do
@@ -190,21 +204,57 @@ let play_game ?(players = 100) ?(rounds = 10) () =
         Array.set scores responder_i (responder_score + add_responder_score)
       end
     end
-  done;
+  done
 
-  environment, scores
+let sort_winners number environment scores =
+  let results = Array.mapi begin fun i score ->
+      Array.get environment i, score
+    end
+      scores in
+
+  Array.sort (fun (x, _) (y, _) -> Int.compare y x ) results;
+
+  Array.sub results 0 number |> Array.map (fun (_, y) -> y)
+
+let rec solve_game : int -> environment -> int -> int -> environment =
+  fun
+    iterations environment players rounds
+    ->
+      if iterations = 0 then environment
+      else begin
+        let scores = Array.(init (length environment) (fun _ -> 0)) in
+
+        play_game ~rounds environment scores;
+
+        let environment : environment = sort_winners 3 scores environment in
+
+        let environments = ref [] in
+
+        environment |> Array.iter begin fun left ->
+          environment |> Array.iter begin fun right ->
+            environments := program_breed iterations left right :: !environments
+          end
+        end;
+
+        let environment = Array.concat !environments in
+
+        solve_game (iterations - 1) environment players rounds
+      end
 
 let () =
   Random.self_init ();
 
-  let players, rounds = match Sys.argv with
-    | [| _ ; players ; rounds |] -> int_of_string players, int_of_string rounds
-    | _ -> failwith "players rounds arguments needed!" in
+  let players, rounds, passes = match Sys.argv with
+    | [| _ ; players ; rounds ; passes |] ->
+      int_of_string players, int_of_string rounds, int_of_string passes
 
-  let environment, scores = play_game ~players ~rounds () in
+    | _ -> failwith "players rounds passes" in
 
-  environment |> Array.iteri begin fun player program ->
-    let score = Array.get scores player in
+  let environment = environment_create ~players ~rounds () in
+
+  let environment = solve_game passes environment players rounds in
+
+  environment |> Array.iter begin fun program ->
     print_program Format.std_formatter program;
-    Printf.printf ",%d\n" score
+    print_newline ()
   end
