@@ -229,14 +229,8 @@ let rec solve_game : int -> environment -> int -> int -> environment =
 
         play_game ~rounds environment scores;
 
-        Printf.printf "--- iteration %d ---\n" iterations;
-
-        environment |> Array.iter begin fun program ->
-          print_program Format.std_formatter program;
-          print_newline ()
-        end;
-
-        Printf.printf "\n---\n\n";
+        Printf.eprintf "solving iteration %d\n" iterations;
+        flush stderr;
 
         let environment : environment =
           sort_winners winners_counted scores environment in
@@ -266,4 +260,7 @@ let () =
   let environment = environment_create ~players ~rounds () in
 
   solve_game passes environment players rounds
-  |> ignore
+  |> Array.iter begin fun program ->
+    print_program Format.std_formatter program;
+    print_newline ()
+  end
