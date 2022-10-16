@@ -1,0 +1,5 @@
+(executable
+ (public_name dark_forest_side_channel_economics)
+ (name main)
+ (preprocess (pps ppx_csv_conv))
+ (libraries ppx_deriving.std))
