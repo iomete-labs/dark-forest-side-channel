@@ -223,18 +223,17 @@ let rec solve_game : int -> environment -> int -> int -> environment =
   fun
     iterations environment players rounds
     ->
-      if iterations = 0 then environment
-      else begin
-        let scores = Array.(init (length environment) (fun _ -> 0)) in
+      let scores = Array.(init (length environment) (fun _ -> 0)) in
 
-        play_game ~rounds environment scores;
+      play_game ~rounds environment scores;
 
-        Printf.eprintf "solving iteration %d\n" iterations;
-        flush stderr;
+      Printf.eprintf "solving iteration %d\n" iterations;
+      flush stderr;
 
-        let environment : environment =
-          sort_winners winners_counted scores environment in
+      let environment : environment =
+        sort_winners winners_counted scores environment in
 
+      if iterations = 0 then environment else begin
         let environments = ref [] in
 
         environment |> Array.iter begin fun left ->
