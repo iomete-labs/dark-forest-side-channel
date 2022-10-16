@@ -167,28 +167,28 @@ let play_game ?(players = 100) ?(rounds = 10) () =
 
   for round = 0 to rounds - 1 do
     iteri_environment begin fun sender_i (sender_programs, _) ->
-        iteri_environment begin fun responder_i (_, responder_programs) ->
-          let sender_program = Array.get sender_programs round  in
+      iteri_environment begin fun responder_i (_, responder_programs) ->
+        let sender_program = Array.get sender_programs round  in
 
-          let responder_program_conditional = Array.get responder_programs round in
+        let responder_program_conditional = Array.get responder_programs round in
 
-          let responder_program =
-            solve_responder_conditional
+        let responder_program =
+          solve_responder_conditional
             sender_programs
             round
             responder_program_conditional in
 
-          let add_sender_score, add_responder_score =
-            solve_payoff sender_program responder_program in
+        let add_sender_score, add_responder_score =
+          solve_payoff sender_program responder_program in
 
-          let sender_score = Array.get scores sender_i in
+        let sender_score = Array.get scores sender_i in
 
-          let responder_score = Array.get scores responder_i in
+        let responder_score = Array.get scores responder_i in
 
-          Array.set scores sender_i (sender_score + add_sender_score);
+        Array.set scores sender_i (sender_score + add_sender_score);
 
-          Array.set scores responder_i (responder_score + add_responder_score)
-        end
+        Array.set scores responder_i (responder_score + add_responder_score)
+      end
     end
   done;
 
@@ -196,7 +196,12 @@ let play_game ?(players = 100) ?(rounds = 10) () =
 
 let () =
   Random.self_init ();
-  let environment, scores = play_game ~players:10000 ~rounds:3 () in
+
+  let players, rounds = match Sys.argv with
+    | [| _ ; players ; rounds |] -> int_of_string players, int_of_string rounds
+    | _ -> failwith "players rounds arguments needed!" in
+
+  let environment, scores = play_game ~players ~rounds () in
 
   environment |> Array.iteri begin fun player program ->
     let score = Array.get scores player in
