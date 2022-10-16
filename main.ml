@@ -31,9 +31,9 @@ let _string_of_respond_action = function
 
 let solve_payoff sender responder = match sender, responder with
   | Share_fake_planet, Research_planet -> 1, -1
-  | Share_legit_planet, Dont_research_planet -> 1, 0
-  | Share_fake_planet, Dont_research_planet -> -1, 0
-  | Share_legit_planet, Research_planet -> 2, 1
+  | Share_legit_planet, Dont_research_planet -> 0, 0
+  | Share_fake_planet, Dont_research_planet -> 0, 0
+  | Share_legit_planet, Research_planet -> 1, 1
   | Dont_share, Research_planet -> 0, 0
   | Dont_share, Dont_research_planet -> 0, 0
 
